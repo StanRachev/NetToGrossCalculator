@@ -1,14 +1,15 @@
 public abstract class Taxes {
 
-    protected float salaryNet;
-    protected float tTIPercent; // ДОД - Данък върху Общ Доход
-    protected float tTIBGN;
-    protected float pensionFundPercentage;
-    protected float unemploymentFundPercentage;
-    protected float healthInsurancePercentage;
-    protected float gIMPercentage; // ОЗМ - Общо Заболяване и Майчинство
-    protected float aCPIPercentage; // ДЗПО - Допълнително Задължително Пенсионно Осигуряване
-    protected float insuranceThreshold;
+    protected final float salaryNet;
+    protected final float tTIPercent; // ДОД - Данък върху Общ Доход
+    protected final float tTIBGN;
+    protected final float pensionFundPercentage;
+    protected final float unemploymentFundPercentage;
+    protected final float healthInsurancePercentage;
+    protected final float gIMPercentage; // ОЗМ - Общо Заболяване и Майчинство
+    protected final float aCPIPercentage; // ДЗПО - Допълнително Задължително Пенсионно Осигуряване
+    private final float insuranceThreshold;
+    protected float insuranceAmount;
 
     public Taxes (float salaryNet, float pensionFundPercentage, float unemploymentFundPercentage,
                   float healthInsurancePercentage, float gIMPercentage, float aCPIPercentage) {
@@ -21,26 +22,25 @@ public abstract class Taxes {
         this.healthInsurancePercentage = healthInsurancePercentage;
         this.gIMPercentage = gIMPercentage;
         this.aCPIPercentage = aCPIPercentage;
-        this.insuranceThreshold = calculateInsuranceThreshold();
+        this.insuranceThreshold = 3400F;
+        this.insuranceAmount = calculateInsuranceThreshold();
+        this.insuranceAmount = calculateInsuranceThreshold();
     }
 
     private float calculateInsuranceThreshold() {
-
-        if (salaryNet >= ((3400 * 0.8622F) * 0.9F)) { // formula
-            return 3400;
+        if (salaryNet >= ((insuranceThreshold * 0.8622F) * 0.9F)) { // formula
+            return insuranceThreshold;
         }
-
         return (salaryNet + tTIBGN) / 0.8622F; // formula
     }
 
     protected float percentageToBGN(float tax) {
-        tax = (tax / 100) * insuranceThreshold;
+        tax = (tax / 100) * insuranceAmount;
         return tax;
     }
 
     public abstract float totalTaxesBGN();
     public abstract String printListTaxes();
-    public abstract float totalTaxesPercentage();
 }
 
 class EmployeeTaxes extends Taxes {
@@ -49,21 +49,23 @@ class EmployeeTaxes extends Taxes {
         super(salaryNet, 6.58F, 0.4F, 3.2F, 1.4F, 2.2F);
     }
 
+    public float totalTaxesBGNwithoutTTI() {
+        return ((pensionFundPercentage + unemploymentFundPercentage + healthInsurancePercentage +
+                gIMPercentage + aCPIPercentage) / 100) * insuranceAmount;
+    }
+
     @Override
     public float totalTaxesBGN() {
-
         return (((pensionFundPercentage + unemploymentFundPercentage + healthInsurancePercentage +
-                  gIMPercentage + aCPIPercentage) / 100 * insuranceThreshold) + tTIBGN) ;
+                  gIMPercentage + aCPIPercentage) / 100) * insuranceAmount) + tTIBGN;
     }
-    @Override
-    public float totalTaxesPercentage() {
 
+    public float totalTaxesPercentageWithoutTTI() {
         return pensionFundPercentage + unemploymentFundPercentage + healthInsurancePercentage +
-               gIMPercentage + aCPIPercentage + tTIPercent;
+                gIMPercentage + aCPIPercentage;
     }
 
     public String printSalariesAndTotal() {
-
         return String.format(
                 "%-66s%12.2f лв.%n" +
                 "%-66s%12.2f лв.%n" +
@@ -83,21 +85,23 @@ class EmployeeTaxes extends Taxes {
                 "%n%-60s%.2f%2%%12.2f лв." +
                 "%n%-60s%.2f%2%%12.2f лв." +
                 "%n%-59s%.2f%2%%12.2f лв." +
-                "%n%-59s%.2f%2%%12.2f лв.",
-                "Удръжки Служител",
+                "%n%-59s%.2f%2%%12.2f лв." +
+                "%n%-59s%19.2f лв.",
+                "Удръжки Служител (Върху Осигурителен Доход)",
                 "Фонд Пенсии", pensionFundPercentage, percentageToBGN(pensionFundPercentage),
                 "Фонд Безработица", unemploymentFundPercentage, percentageToBGN(unemploymentFundPercentage),
                 "Здравно Осигуряване", healthInsurancePercentage, percentageToBGN(healthInsurancePercentage),
                 "Общо Заболяване и Майчинство", gIMPercentage, percentageToBGN(gIMPercentage),
                 "Допълнително Задължително Пенсионно Осигуряване", aCPIPercentage, percentageToBGN(aCPIPercentage),
+                "Общо осигурителни вноски", totalTaxesPercentageWithoutTTI(), totalTaxesBGNwithoutTTI(),
                 "Данък върху Общ Доход", tTIPercent * 100, tTIBGN,
-                "Общо", totalTaxesPercentage(), totalTaxesBGN());
+                "Общо удръжки", totalTaxesBGN());
     }
 }
 
 class EmployerTaxes extends Taxes {
 
-    protected float oAOD; // РЗПБ = Трудова Злополука и Професионална Болест
+    private final float oAOD; // РЗПБ = Трудова Злополука и Професионална Болест
     protected static float totalTaxesBGN;
 
     public EmployerTaxes(float salaryNet) {
@@ -108,14 +112,11 @@ class EmployerTaxes extends Taxes {
 
     @Override
     public float totalTaxesBGN() {
-
         return ((pensionFundPercentage + unemploymentFundPercentage + healthInsurancePercentage +
-                 gIMPercentage + aCPIPercentage + oAOD) / 100) * insuranceThreshold;
+                 gIMPercentage + aCPIPercentage + oAOD) / 100F) * insuranceAmount;
     }
 
-    @Override
     public float totalTaxesPercentage() {
-
         return pensionFundPercentage + unemploymentFundPercentage + healthInsurancePercentage +
                gIMPercentage + aCPIPercentage + oAOD;
     }
@@ -131,14 +132,14 @@ class EmployerTaxes extends Taxes {
                 "%n%-60s%.2f%2%%12.2f лв." +
                 "%n%-60s%.2f%2%%12.2f лв." +
                 "%n%-59s%.2f%2%%12.2f лв.",
-                "Удръжки Работодател",
+                "Удръжки Работодател (Върху Осигурителен Доход)",
                 "Фонд Пенсии", pensionFundPercentage, percentageToBGN(pensionFundPercentage),
                 "Фонд Безработица", unemploymentFundPercentage, percentageToBGN(unemploymentFundPercentage),
                 "Здравно Осигуряване", healthInsurancePercentage, percentageToBGN(healthInsurancePercentage),
                 "Общо Заболяване и Майчинство", gIMPercentage, percentageToBGN(gIMPercentage),
                 "Допълнително Задължително Пенсионно Осигуряване", aCPIPercentage, percentageToBGN(aCPIPercentage),
                 "Трудова Злополука и Професионална Болест", oAOD, percentageToBGN(oAOD),
-                "Общо", totalTaxesPercentage(), totalTaxesBGN());
+                "Общо удръжки", totalTaxesPercentage(), totalTaxesBGN());
     }
 }
 

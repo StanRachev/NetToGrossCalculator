@@ -3,7 +3,6 @@ import java.util.Scanner;
 public class UI {
 
     public int inputSalaryNet() {
-
         System.out.println("Please, enter Net salary: (780 lv - 1 000 000 lv)");
 
         int input = 0;
@@ -15,7 +14,6 @@ public class UI {
                 System.out.println("Numbers only:");
             }
         }
-
         return input;
     }
 }
