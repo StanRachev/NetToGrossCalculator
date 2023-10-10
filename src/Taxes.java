@@ -24,7 +24,6 @@ public abstract class Taxes {
         this.aCPIPercentage = aCPIPercentage;
         this.insuranceThreshold = 3400F;
         this.insuranceAmount = calculateInsuranceThreshold();
-        this.insuranceAmount = calculateInsuranceThreshold();
     }
 
     private float calculateInsuranceThreshold() {
