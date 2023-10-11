@@ -23,19 +23,15 @@ public abstract class Taxes {
         this.gIMPercentage = gIMPercentage;
         this.aCPIPercentage = aCPIPercentage;
         this.insuranceThreshold = 3400F;
-        this.insuranceAmount = calculateInsuranceThreshold();
+        this.insuranceAmount = calculateInsuranceAmount();
     }
 
-    private float calculateInsuranceThreshold() {
-        if (salaryNet >= ((insuranceThreshold * 0.8622F) * 0.9F)) { // formula
-            return insuranceThreshold;
-        }
-        return (salaryNet + tTIBGN) / 0.8622F; // formula
-    }
+    private float calculateInsuranceAmount() {
+        return (salaryNet >= (insuranceThreshold * 0.8622F) * 0.9F ? insuranceThreshold : (salaryNet + tTIBGN) / 0.8622F);
+    }                        // formula                                                   // formula
 
     protected float percentageToBGN(float tax) {
-        tax = (tax / 100) * insuranceAmount;
-        return tax;
+        return (tax / 100F) * insuranceAmount;
     }
 
     public abstract float totalTaxesBGN();
@@ -93,7 +89,7 @@ class EmployeeTaxes extends Taxes {
                 "Общо Заболяване и Майчинство", gIMPercentage, percentageToBGN(gIMPercentage),
                 "Допълнително Задължително Пенсионно Осигуряване", aCPIPercentage, percentageToBGN(aCPIPercentage),
                 "Общо осигурителни вноски", totalTaxesPercentageWithoutTTI(), totalTaxesBGNwithoutTTI(),
-                "Данък върху Общ Доход", tTIPercent * 100, tTIBGN,
+                "Данък върху Общ Доход", tTIPercent * 100F, tTIBGN,
                 "Общо удръжки", totalTaxesBGN());
     }
 }
@@ -141,4 +137,3 @@ class EmployerTaxes extends Taxes {
                 "Общо удръжки", totalTaxesPercentage(), totalTaxesBGN());
     }
 }
-
