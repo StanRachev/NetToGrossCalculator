@@ -1,0 +1,15 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# Compiled source #
+*.class
+*.jar
+*.war
+
+# Build directory
+/out/
+
+# Logs
+*.log
